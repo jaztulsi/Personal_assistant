@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@devicefarmer/adbkit": "^3.2.6",
+    "face-api.js": "^0.22.2",
     "@google/generative-ai": "^0.21.0",
     "@huggingface/inference": "^2.8.1",
     "@monaco-editor/react": "^4.6.0",

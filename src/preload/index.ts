@@ -11,10 +11,11 @@ import type {
   GmailMessage,
   GmailLabel,
   WebSearchResult,
-  SystemMetrics,
   ProcessInfo,
   EmbeddingResult,
   VectorSearchResult,
+  BatteryInfo,
+  ThermalState,
   SnapPosition,
 } from '../shared/types'
 
@@ -39,6 +40,8 @@ const irisAPI = {
       invoke<FileEntry[]>(IrisChannel.FILES_LIST, dir),
     search: (dir: string, query: string, options?: { ext?: string; recursive?: boolean }) =>
       invoke<FileEntry[]>(IrisChannel.FILES_SEARCH, dir, query, options),
+    trash: (path: string) =>
+      invoke<void>(IrisChannel.FILES_TRASH, path),
   },
 
   apps: {
@@ -50,6 +53,8 @@ const irisAPI = {
       invoke<void>(IrisChannel.APPS_KILL, pid),
     getRunning: () =>
       invoke<RunningApp[]>(IrisChannel.APPS_GET_RUNNING),
+    getFromApplicationsFolder: (appName: string) =>
+      invoke<InstalledApp | null>(IrisChannel.APPS_GET_FROM_APPLICATIONS, appName),
   },
 
   input: {
@@ -76,6 +81,8 @@ const irisAPI = {
       invoke<void>(IrisChannel.WINDOW_FOCUS, windowId),
     list: () =>
       invoke<WindowInfo[]>(IrisChannel.WINDOW_LIST),
+    fullscreen: (windowId: number) =>
+      invoke<void>(IrisChannel.WINDOW_FULLSCREEN, windowId),
   },
 
   screen: {
@@ -85,6 +92,8 @@ const irisAPI = {
       invoke<string>(IrisChannel.SCREEN_OCR, imageBase64),
     getInfo: () =>
       invoke<ScreenInfo[]>(IrisChannel.SCREEN_GET_INFO),
+    getActiveApp: () =>
+      invoke<{ name: string; bundleId?: string }>(IrisChannel.SCREEN_GET_ACTIVE_APP),
   },
 
   adb: {
@@ -126,13 +135,17 @@ const irisAPI = {
 
   system: {
     getCpuUsage: () =>
-      invoke<{ percent: number; model: string; cores: number }>(IrisChannel.SYSTEM_GET_CPU),
+      invoke<{ percent: number; model: string; cores: number; eCores?: number; pCores?: number }>(IrisChannel.SYSTEM_GET_CPU),
     getRamUsage: () =>
       invoke<{ usedGB: number; totalGB: number; percent: number }>(IrisChannel.SYSTEM_GET_RAM),
     getProcesses: () =>
       invoke<ProcessInfo[]>(IrisChannel.SYSTEM_GET_PROCESSES),
     getInstalledApps: () =>
       invoke<InstalledApp[]>(IrisChannel.SYSTEM_GET_INSTALLED),
+    getBatteryInfo: () =>
+      invoke<BatteryInfo>(IrisChannel.SYSTEM_GET_BATTERY),
+    getThermalState: () =>
+      invoke<ThermalState>(IrisChannel.SYSTEM_GET_THERMAL),
   },
 
   store: {
@@ -155,6 +168,40 @@ const irisAPI = {
       invoke<VectorSearchResult[]>(IrisChannel.AI_VECTOR_SEARCH, query, options),
     indexDirectory: (dir: string, options?: { recursive?: boolean; extensions?: string[] }) =>
       invoke<{ indexed: number }>(IrisChannel.AI_INDEX_DIR, dir, options),
+  },
+
+  macos: {
+    runAppleScript: (script: string) =>
+      invoke<string>(IrisChannel.MACOS_RUN_APPLESCRIPT, script),
+    openWithApp: (filePath: string, appName: string) =>
+      invoke<void>(IrisChannel.MACOS_OPEN_WITH_APP, filePath, appName),
+    showNotification: (title: string, body: string) =>
+      invoke<void>(IrisChannel.MACOS_SHOW_NOTIFICATION, title, body),
+    setDockBadge: (count: number | string) =>
+      invoke<void>(IrisChannel.MACOS_SET_DOCK_BADGE, count),
+    requestPermission: (type: 'camera' | 'microphone' | 'screen') =>
+      invoke<{ granted: boolean }>(IrisChannel.MACOS_REQUEST_PERMISSION, type),
+  },
+
+  auth: {
+    setPin: (pin: string) =>
+      invoke<void>(IrisChannel.AUTH_SET_PIN, pin),
+    verifyPin: (pin: string) =>
+      invoke<{ valid: boolean }>(IrisChannel.AUTH_VERIFY_PIN, pin),
+    hasPin: () =>
+      invoke<boolean>(IrisChannel.AUTH_HAS_PIN),
+    touchID: () =>
+      invoke<{ success: boolean }>(IrisChannel.AUTH_TOUCH_ID),
+    canTouchID: () =>
+      invoke<boolean>(IrisChannel.AUTH_CAN_TOUCH_ID),
+    storeFace: (descriptor: number[]) =>
+      invoke<void>(IrisChannel.AUTH_STORE_FACE, descriptor),
+    getFace: () =>
+      invoke<number[] | null>(IrisChannel.AUTH_GET_FACE),
+    hasFace: () =>
+      invoke<boolean>(IrisChannel.AUTH_HAS_FACE),
+    clearFace: () =>
+      invoke<void>(IrisChannel.AUTH_CLEAR_FACE),
   },
 } as const
 

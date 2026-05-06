@@ -20,12 +20,14 @@ export enum IrisChannel {
   FILES_DELETE      = 'iris:files:delete',
   FILES_LIST        = 'iris:files:list',
   FILES_SEARCH      = 'iris:files:search',
+  FILES_TRASH       = 'iris:files:trash',
 
   // Apps
   APPS_LIST         = 'iris:apps:list',
   APPS_LAUNCH       = 'iris:apps:launch',
   APPS_KILL         = 'iris:apps:kill',
   APPS_GET_RUNNING  = 'iris:apps:getRunning',
+  APPS_GET_FROM_APPLICATIONS = 'iris:apps:getFromApplicationsFolder',
 
   // Input
   INPUT_TYPE_TEXT   = 'iris:input:typeText',
@@ -40,11 +42,13 @@ export enum IrisChannel {
   WINDOW_MAXIMIZE   = 'iris:window:maximize',
   WINDOW_FOCUS      = 'iris:window:focus',
   WINDOW_LIST       = 'iris:window:list',
+  WINDOW_FULLSCREEN = 'iris:window:fullscreen',
 
   // Screen
   SCREEN_CAPTURE    = 'iris:screen:capture',
   SCREEN_OCR        = 'iris:screen:ocr',
   SCREEN_GET_INFO   = 'iris:screen:getInfo',
+  SCREEN_GET_ACTIVE_APP = 'iris:screen:getActiveApp',
 
   // ADB
   ADB_CONNECT       = 'iris:adb:connect',
@@ -71,6 +75,8 @@ export enum IrisChannel {
   SYSTEM_GET_RAM         = 'iris:system:getRamUsage',
   SYSTEM_GET_PROCESSES   = 'iris:system:getProcesses',
   SYSTEM_GET_INSTALLED   = 'iris:system:getInstalledApps',
+  SYSTEM_GET_BATTERY     = 'iris:system:getBatteryInfo',
+  SYSTEM_GET_THERMAL     = 'iris:system:getThermalState',
 
   // Store
   STORE_GET       = 'iris:store:get',
@@ -83,6 +89,24 @@ export enum IrisChannel {
   AI_EMBED          = 'iris:ai:embed',
   AI_VECTOR_SEARCH  = 'iris:ai:vectorSearch',
   AI_INDEX_DIR      = 'iris:ai:indexDirectory',
+
+  // Auth
+  AUTH_SET_PIN           = 'iris:auth:setPin',
+  AUTH_VERIFY_PIN        = 'iris:auth:verifyPin',
+  AUTH_HAS_PIN           = 'iris:auth:hasPin',
+  AUTH_TOUCH_ID          = 'iris:auth:touchID',
+  AUTH_CAN_TOUCH_ID      = 'iris:auth:canTouchID',
+  AUTH_STORE_FACE        = 'iris:auth:storeFace',
+  AUTH_GET_FACE           = 'iris:auth:getFace',
+  AUTH_HAS_FACE          = 'iris:auth:hasFace',
+  AUTH_CLEAR_FACE        = 'iris:auth:clearFace',
+
+  // macOS
+  MACOS_RUN_APPLESCRIPT  = 'iris:macos:runAppleScript',
+  MACOS_OPEN_WITH_APP    = 'iris:macos:openWithApp',
+  MACOS_SHOW_NOTIFICATION = 'iris:macos:showNotification',
+  MACOS_SET_DOCK_BADGE   = 'iris:macos:setDockBadge',
+  MACOS_REQUEST_PERMISSION = 'iris:macos:requestPermission',
 }
 
 // ─── Gemini Tool Call ─────────────────────────────────────────────────────────
@@ -225,6 +249,21 @@ export interface VectorSearchResult {
   text: string
   score: number
   metadata?: Record<string, unknown>
+}
+
+export interface BatteryInfo {
+  percent: number
+  isCharging: boolean
+  isPluggedIn: boolean
+  cycleCount: number
+  health: number
+  timeRemaining: number | null
+}
+
+export interface ThermalState {
+  cpuThrottle: boolean
+  level: string
+  raw: string
 }
 
 // ─── Window Snap Positions ────────────────────────────────────────────────────

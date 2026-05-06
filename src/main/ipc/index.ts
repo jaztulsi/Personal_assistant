@@ -11,6 +11,8 @@ import { webHandlers } from './handlers/web'
 import { systemHandlers } from './handlers/system'
 import { storeHandlers } from './handlers/store'
 import { aiHandlers } from './handlers/ai'
+import { macosHandlers } from './handlers/macos'
+import { authHandlers } from './handlers/auth'
 import type { IrisResponse } from '../../shared/types'
 
 // IRIS IPC Router // JASRAJ
@@ -36,12 +38,14 @@ const allHandlers: Record<IrisChannel, HandlerFn> = {
   [IrisChannel.FILES_DELETE]: filesHandlers.delete,
   [IrisChannel.FILES_LIST]:   filesHandlers.list,
   [IrisChannel.FILES_SEARCH]: filesHandlers.search,
+  [IrisChannel.FILES_TRASH]:  filesHandlers.trash,
 
   // Apps
   [IrisChannel.APPS_LIST]:        appsHandlers.list,
   [IrisChannel.APPS_LAUNCH]:      appsHandlers.launch,
   [IrisChannel.APPS_KILL]:        appsHandlers.kill,
   [IrisChannel.APPS_GET_RUNNING]: appsHandlers.getRunning,
+  [IrisChannel.APPS_GET_FROM_APPLICATIONS]: appsHandlers.getFromApplicationsFolder,
 
   // Input
   [IrisChannel.INPUT_TYPE_TEXT]:  inputHandlers.typeText,
@@ -51,16 +55,18 @@ const allHandlers: Record<IrisChannel, HandlerFn> = {
   [IrisChannel.INPUT_SCROLL]:     inputHandlers.scroll,
 
   // Window
-  [IrisChannel.WINDOW_SNAP]:     windowHandlers.snap,
-  [IrisChannel.WINDOW_MINIMIZE]: windowHandlers.minimize,
-  [IrisChannel.WINDOW_MAXIMIZE]: windowHandlers.maximize,
-  [IrisChannel.WINDOW_FOCUS]:    windowHandlers.focus,
-  [IrisChannel.WINDOW_LIST]:     windowHandlers.list,
+  [IrisChannel.WINDOW_SNAP]:       windowHandlers.snap,
+  [IrisChannel.WINDOW_MINIMIZE]:   windowHandlers.minimize,
+  [IrisChannel.WINDOW_MAXIMIZE]:   windowHandlers.maximize,
+  [IrisChannel.WINDOW_FOCUS]:      windowHandlers.focus,
+  [IrisChannel.WINDOW_LIST]:       windowHandlers.list,
+  [IrisChannel.WINDOW_FULLSCREEN]: windowHandlers.fullscreen,
 
   // Screen
-  [IrisChannel.SCREEN_CAPTURE]:  screenHandlers.capture,
-  [IrisChannel.SCREEN_OCR]:      screenHandlers.ocr,
-  [IrisChannel.SCREEN_GET_INFO]: screenHandlers.getInfo,
+  [IrisChannel.SCREEN_CAPTURE]:        screenHandlers.capture,
+  [IrisChannel.SCREEN_OCR]:            screenHandlers.ocr,
+  [IrisChannel.SCREEN_GET_INFO]:       screenHandlers.getInfo,
+  [IrisChannel.SCREEN_GET_ACTIVE_APP]: screenHandlers.getActiveApp,
 
   // ADB
   [IrisChannel.ADB_CONNECT]:      adbHandlers.connect,
@@ -87,6 +93,8 @@ const allHandlers: Record<IrisChannel, HandlerFn> = {
   [IrisChannel.SYSTEM_GET_RAM]:       systemHandlers.getRamUsage,
   [IrisChannel.SYSTEM_GET_PROCESSES]: systemHandlers.getProcesses,
   [IrisChannel.SYSTEM_GET_INSTALLED]: systemHandlers.getInstalledApps,
+  [IrisChannel.SYSTEM_GET_BATTERY]:   systemHandlers.getBatteryInfo,
+  [IrisChannel.SYSTEM_GET_THERMAL]:   systemHandlers.getThermalState,
 
   // Store
   [IrisChannel.STORE_GET]:       storeHandlers.get,
@@ -99,6 +107,24 @@ const allHandlers: Record<IrisChannel, HandlerFn> = {
   [IrisChannel.AI_EMBED]:         aiHandlers.embed,
   [IrisChannel.AI_VECTOR_SEARCH]: aiHandlers.vectorSearch,
   [IrisChannel.AI_INDEX_DIR]:     aiHandlers.indexDirectory,
+
+  // Auth
+  [IrisChannel.AUTH_SET_PIN]:     authHandlers.setPin,
+  [IrisChannel.AUTH_VERIFY_PIN]:  authHandlers.verifyPin,
+  [IrisChannel.AUTH_HAS_PIN]:     authHandlers.hasPin,
+  [IrisChannel.AUTH_TOUCH_ID]:    authHandlers.touchID,
+  [IrisChannel.AUTH_CAN_TOUCH_ID]: authHandlers.canTouchID,
+  [IrisChannel.AUTH_STORE_FACE]:  authHandlers.storeFace,
+  [IrisChannel.AUTH_GET_FACE]:    authHandlers.getFace,
+  [IrisChannel.AUTH_HAS_FACE]:    authHandlers.hasFace,
+  [IrisChannel.AUTH_CLEAR_FACE]:  authHandlers.clearFace,
+
+  // macOS
+  [IrisChannel.MACOS_RUN_APPLESCRIPT]:    macosHandlers.runAppleScript,
+  [IrisChannel.MACOS_OPEN_WITH_APP]:      macosHandlers.openWithApp,
+  [IrisChannel.MACOS_SHOW_NOTIFICATION]:  macosHandlers.showNotification,
+  [IrisChannel.MACOS_SET_DOCK_BADGE]:     macosHandlers.setDockBadge,
+  [IrisChannel.MACOS_REQUEST_PERMISSION]: macosHandlers.requestPermission,
 }
 
 export function registerAllHandlers(): void {

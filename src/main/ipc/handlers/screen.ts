@@ -1,8 +1,17 @@
-import { desktopCapturer, screen } from 'electron'
+import { desktopCapturer, screen, systemPreferences } from 'electron'
+import { exec } from 'child_process'
+import { promisify } from 'util'
 import type { IrisResponse, ScreenInfo } from '../../../shared/types'
+
+const execAsync = promisify(exec)
 
 export const screenHandlers = {
   async capture(_: unknown, displayId?: number): Promise<IrisResponse<string>> {
+    const status = systemPreferences.getMediaAccessStatus('screen')
+    if (status === 'not-determined' || status === 'denied') {
+      return { success: false, error: 'screen_recording_required' }
+    }
+
     const sources = await desktopCapturer.getSources({
       types: ['screen'],
       thumbnailSize: { width: 1920, height: 1080 },
@@ -43,5 +52,20 @@ export const screenHandlers = {
       isPrimary: d.id === primary.id,
     }))
     return { success: true, data: infos }
+  },
+
+  async getActiveApp(): Promise<IrisResponse<{ name: string; bundleId?: string }>> {
+    const { stdout } = await execAsync(
+      `osascript -e 'tell application "System Events" to get name of first process whose frontmost is true'`
+    )
+    const name = stdout.trim()
+    let bundleId: string | undefined
+    try {
+      const { stdout: bid } = await execAsync(
+        `osascript -e 'id of application "${name}"'`
+      )
+      bundleId = bid.trim() || undefined
+    } catch { /* some apps don't expose bundle IDs via osascript */ }
+    return { success: true, data: { name, bundleId } }
   },
 }

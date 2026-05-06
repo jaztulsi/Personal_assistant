@@ -1,7 +1,5 @@
+import { execSync } from 'child_process'
 import type { IrisResponse } from '../../../shared/types'
-
-// Ghost typing: random 30-80ms delay per keystroke
-// Mouse: bezier curve with 5 control points
 
 function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms))
@@ -11,7 +9,6 @@ function randomBetween(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min
 }
 
-// 5-point cubic bezier interpolation for mouse paths
 function bezier5(
   t: number,
   p0: number,
@@ -30,10 +27,22 @@ function bezier5(
   )
 }
 
+function checkAccessibility(): boolean {
+  try {
+    execSync('osascript -e \'tell application "System Events" to keystroke ""\'', { timeout: 3000 })
+    return true
+  } catch {
+    return false
+  }
+}
+
 async function getNut() {
-  // @nut-tree-fork/nut-js is the maintained fork of the original @nut-tree/nut-js
-  const { mouse, keyboard, Key, Button, straightTo, Point } = await import('@nut-tree-fork/nut-js' as any)
-  return { mouse, keyboard, Key, Button, straightTo, Point }
+  const { mouse, keyboard, Key, Button, Point } = await import('@nut-tree-fork/nut-js' as any)
+  return { mouse, keyboard, Key, Button, Point }
+}
+
+function accessibilityError(): IrisResponse<void> {
+  return { success: false, error: 'accessibility_required' }
 }
 
 export const inputHandlers = {
@@ -42,6 +51,7 @@ export const inputHandlers = {
     text: string,
     options: { ghost?: boolean } = {}
   ): Promise<IrisResponse<void>> {
+    if (!checkAccessibility()) return accessibilityError()
     const { keyboard } = await getNut()
     const { ghost = true } = options
 
@@ -62,6 +72,7 @@ export const inputHandlers = {
     targetY: number,
     options: { duration?: number } = {}
   ): Promise<IrisResponse<void>> {
+    if (!checkAccessibility()) return accessibilityError()
     const { mouse, Point } = await getNut()
     const { duration = 500 } = options
     const steps = Math.max(10, Math.floor(duration / 16))
@@ -70,7 +81,6 @@ export const inputHandlers = {
     const x0 = start.x
     const y0 = start.y
 
-    // Generate 3 random intermediate control points for bezier
     const ctrl = Array.from({ length: 3 }, () => ({
       x: x0 + Math.random() * (targetX - x0),
       y: y0 + Math.random() * (targetY - y0),
@@ -92,6 +102,7 @@ export const inputHandlers = {
     y: number,
     button: 'left' | 'right' | 'middle' = 'left'
   ): Promise<IrisResponse<void>> {
+    if (!checkAccessibility()) return accessibilityError()
     const { mouse, Point, Button } = await getNut()
     await mouse.setPosition(new Point(x, y))
     const btn = button === 'right' ? Button.RIGHT : button === 'middle' ? Button.MIDDLE : Button.LEFT
@@ -100,10 +111,15 @@ export const inputHandlers = {
   },
 
   async shortcut(_: unknown, keys: string[]): Promise<IrisResponse<void>> {
+    if (!checkAccessibility()) return accessibilityError()
     const { keyboard, Key } = await getNut()
     const mapped = keys.map((k) => {
-      const upper = k.toUpperCase() as keyof typeof Key
-      return Key[upper] ?? k
+      const keyMap: Record<string, unknown> = {
+        cmd: Key.LeftSuper, command: Key.LeftSuper, meta: Key.LeftSuper,
+        shift: Key.LeftShift, alt: Key.LeftAlt, option: Key.LeftAlt,
+        ctrl: Key.LeftControl, control: Key.LeftControl,
+      }
+      return keyMap[k.toLowerCase()] ?? Key[k.toUpperCase() as keyof typeof Key] ?? k
     })
     await keyboard.pressKey(...(mapped as Parameters<typeof keyboard.pressKey>))
     await keyboard.releaseKey(...(mapped as Parameters<typeof keyboard.releaseKey>))
@@ -117,9 +133,10 @@ export const inputHandlers = {
     deltaX: number,
     deltaY: number
   ): Promise<IrisResponse<void>> {
+    if (!checkAccessibility()) return accessibilityError()
     const { mouse, Point } = await getNut()
     await mouse.setPosition(new Point(x, y))
-    await mouse.scrollDown(Math.abs(deltaY))
+    if (deltaY > 0) await mouse.scrollDown(Math.abs(deltaY))
     if (deltaY < 0) await mouse.scrollUp(Math.abs(deltaY))
     if (deltaX > 0) await mouse.scrollRight(Math.abs(deltaX))
     if (deltaX < 0) await mouse.scrollLeft(Math.abs(deltaX))

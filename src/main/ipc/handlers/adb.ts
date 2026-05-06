@@ -5,8 +5,8 @@ const MOCK_DEVICES: AdbDevice[] = [
   {
     id: 'emulator-5554',
     type: 'emulator',
-    model: 'Pixel 7',
-    androidVersion: '14',
+    model: 'Pixel 9 Pro',
+    androidVersion: '15',
   },
 ]
 
