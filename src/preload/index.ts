@@ -182,6 +182,27 @@ const irisAPI = {
     requestPermission: (type: 'camera' | 'microphone' | 'screen') =>
       invoke<{ granted: boolean }>(IrisChannel.MACOS_REQUEST_PERMISSION, type),
   },
+
+  auth: {
+    setPin: (pin: string) =>
+      invoke<void>(IrisChannel.AUTH_SET_PIN, pin),
+    verifyPin: (pin: string) =>
+      invoke<{ valid: boolean }>(IrisChannel.AUTH_VERIFY_PIN, pin),
+    hasPin: () =>
+      invoke<boolean>(IrisChannel.AUTH_HAS_PIN),
+    touchID: () =>
+      invoke<{ success: boolean }>(IrisChannel.AUTH_TOUCH_ID),
+    canTouchID: () =>
+      invoke<boolean>(IrisChannel.AUTH_CAN_TOUCH_ID),
+    storeFace: (descriptor: number[]) =>
+      invoke<void>(IrisChannel.AUTH_STORE_FACE, descriptor),
+    getFace: () =>
+      invoke<number[] | null>(IrisChannel.AUTH_GET_FACE),
+    hasFace: () =>
+      invoke<boolean>(IrisChannel.AUTH_HAS_FACE),
+    clearFace: () =>
+      invoke<void>(IrisChannel.AUTH_CLEAR_FACE),
+  },
 } as const
 
 contextBridge.exposeInMainWorld('iris', irisAPI)

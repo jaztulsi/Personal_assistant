@@ -12,6 +12,7 @@ import { systemHandlers } from './handlers/system'
 import { storeHandlers } from './handlers/store'
 import { aiHandlers } from './handlers/ai'
 import { macosHandlers } from './handlers/macos'
+import { authHandlers } from './handlers/auth'
 import type { IrisResponse } from '../../shared/types'
 
 // IRIS IPC Router // JASRAJ
@@ -106,6 +107,17 @@ const allHandlers: Record<IrisChannel, HandlerFn> = {
   [IrisChannel.AI_EMBED]:         aiHandlers.embed,
   [IrisChannel.AI_VECTOR_SEARCH]: aiHandlers.vectorSearch,
   [IrisChannel.AI_INDEX_DIR]:     aiHandlers.indexDirectory,
+
+  // Auth
+  [IrisChannel.AUTH_SET_PIN]:     authHandlers.setPin,
+  [IrisChannel.AUTH_VERIFY_PIN]:  authHandlers.verifyPin,
+  [IrisChannel.AUTH_HAS_PIN]:     authHandlers.hasPin,
+  [IrisChannel.AUTH_TOUCH_ID]:    authHandlers.touchID,
+  [IrisChannel.AUTH_CAN_TOUCH_ID]: authHandlers.canTouchID,
+  [IrisChannel.AUTH_STORE_FACE]:  authHandlers.storeFace,
+  [IrisChannel.AUTH_GET_FACE]:    authHandlers.getFace,
+  [IrisChannel.AUTH_HAS_FACE]:    authHandlers.hasFace,
+  [IrisChannel.AUTH_CLEAR_FACE]:  authHandlers.clearFace,
 
   // macOS
   [IrisChannel.MACOS_RUN_APPLESCRIPT]:    macosHandlers.runAppleScript,

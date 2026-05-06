@@ -90,6 +90,17 @@ export enum IrisChannel {
   AI_VECTOR_SEARCH  = 'iris:ai:vectorSearch',
   AI_INDEX_DIR      = 'iris:ai:indexDirectory',
 
+  // Auth
+  AUTH_SET_PIN           = 'iris:auth:setPin',
+  AUTH_VERIFY_PIN        = 'iris:auth:verifyPin',
+  AUTH_HAS_PIN           = 'iris:auth:hasPin',
+  AUTH_TOUCH_ID          = 'iris:auth:touchID',
+  AUTH_CAN_TOUCH_ID      = 'iris:auth:canTouchID',
+  AUTH_STORE_FACE        = 'iris:auth:storeFace',
+  AUTH_GET_FACE           = 'iris:auth:getFace',
+  AUTH_HAS_FACE          = 'iris:auth:hasFace',
+  AUTH_CLEAR_FACE        = 'iris:auth:clearFace',
+
   // macOS
   MACOS_RUN_APPLESCRIPT  = 'iris:macos:runAppleScript',
   MACOS_OPEN_WITH_APP    = 'iris:macos:openWithApp',
