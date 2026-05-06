@@ -1,7 +1,11 @@
 import fs from 'fs/promises'
 import path from 'path'
 import { existsSync } from 'fs'
+import { execSync } from 'child_process'
+import { shell } from 'electron'
 import type { IrisResponse, FileEntry } from '../../../shared/types'
+
+const MACOS_JUNK = ['.DS_Store', '._', '.Spotlight-V100', '.TemporaryItems', '.Trashes']
 
 async function stat(filePath: string): Promise<FileEntry> {
   const s = await fs.stat(filePath)
@@ -13,6 +17,10 @@ async function stat(filePath: string): Promise<FileEntry> {
     modified: s.mtime.toISOString(),
     created: s.birthtime.toISOString(),
   }
+}
+
+function isMacOSJunk(name: string): boolean {
+  return MACOS_JUNK.some(junk => name === junk || name.startsWith(junk))
 }
 
 export const filesHandlers = {
@@ -46,8 +54,9 @@ export const filesHandlers = {
 
   async list(_: unknown, dir: string): Promise<IrisResponse<FileEntry[]>> {
     const entries = await fs.readdir(dir)
+    const filtered = entries.filter(name => !isMacOSJunk(name))
     const results = await Promise.all(
-      entries.map((name) => stat(path.join(dir, name)))
+      filtered.map((name) => stat(path.join(dir, name)))
     )
     return { success: true, data: results }
   },
@@ -65,6 +74,7 @@ export const filesHandlers = {
       if (!existsSync(current)) return
       const entries = await fs.readdir(current, { withFileTypes: true })
       for (const entry of entries) {
+        if (isMacOSJunk(entry.name)) continue
         const full = path.join(current, entry.name)
         if (entry.isDirectory() && recursive) {
           await walk(full)
@@ -80,5 +90,15 @@ export const filesHandlers = {
 
     await walk(dir)
     return { success: true, data: results }
+  },
+
+  async trash(_: unknown, filePath: string): Promise<IrisResponse<void>> {
+    try {
+      await shell.trashItem(filePath)
+      return { success: true }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      return { success: false, error: message }
+    }
   },
 }

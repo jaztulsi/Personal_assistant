@@ -16,3 +16,6 @@ out/
 
 # Vector DB data
 userData/
+
+# Git worktrees
+.claude/worktrees/

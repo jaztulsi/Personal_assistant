@@ -11,6 +11,7 @@ import { webHandlers } from './handlers/web'
 import { systemHandlers } from './handlers/system'
 import { storeHandlers } from './handlers/store'
 import { aiHandlers } from './handlers/ai'
+import { macosHandlers } from './handlers/macos'
 import type { IrisResponse } from '../../shared/types'
 
 // IRIS IPC Router // JASRAJ
@@ -87,6 +88,11 @@ const allHandlers: Record<IrisChannel, HandlerFn> = {
   [IrisChannel.SYSTEM_GET_RAM]:       systemHandlers.getRamUsage,
   [IrisChannel.SYSTEM_GET_PROCESSES]: systemHandlers.getProcesses,
   [IrisChannel.SYSTEM_GET_INSTALLED]: systemHandlers.getInstalledApps,
+  [IrisChannel.SYSTEM_GET_BATTERY]:   systemHandlers.getBatteryInfo,
+  [IrisChannel.SYSTEM_GET_THERMAL]:   systemHandlers.getThermalState,
+
+  // Screen
+  [IrisChannel.SCREEN_GET_ACTIVE_APP]: screenHandlers.getActiveApp,
 
   // Store
   [IrisChannel.STORE_GET]:       storeHandlers.get,
@@ -99,6 +105,14 @@ const allHandlers: Record<IrisChannel, HandlerFn> = {
   [IrisChannel.AI_EMBED]:         aiHandlers.embed,
   [IrisChannel.AI_VECTOR_SEARCH]: aiHandlers.vectorSearch,
   [IrisChannel.AI_INDEX_DIR]:     aiHandlers.indexDirectory,
+
+  // macOS
+  [IrisChannel.MACOS_RUN_APPLESCRIPT]: macosHandlers.runAppleScript,
+  [IrisChannel.MACOS_OPEN_WITH_APP]:   macosHandlers.openWithApp,
+  [IrisChannel.MACOS_SHOW_NOTIF]:      macosHandlers.showNotification,
+  [IrisChannel.MACOS_SET_DOCK_BADGE]:  macosHandlers.setDockBadge,
+  [IrisChannel.MACOS_REQUEST_PERM]:    macosHandlers.requestPermission,
+  [IrisChannel.FILES_TRASH]:           filesHandlers.trash,
 }
 
 export function registerAllHandlers(): void {

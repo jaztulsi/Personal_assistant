@@ -1,8 +1,17 @@
-import { desktopCapturer, screen } from 'electron'
+import { desktopCapturer, screen, systemPreferences } from 'electron'
+import { execSync } from 'child_process'
 import type { IrisResponse, ScreenInfo } from '../../../shared/types'
 
 export const screenHandlers = {
   async capture(_: unknown, displayId?: number): Promise<IrisResponse<string>> {
+    const status = systemPreferences.getMediaAccessStatus('screen')
+    if (status === 'denied') {
+      return { success: false, error: 'screen_recording_denied' }
+    }
+    if (status === 'not-determined') {
+      return { success: false, error: 'screen_recording_required' }
+    }
+
     const sources = await desktopCapturer.getSources({
       types: ['screen'],
       thumbnailSize: { width: 1920, height: 1080 },
@@ -43,5 +52,16 @@ export const screenHandlers = {
       isPrimary: d.id === primary.id,
     }))
     return { success: true, data: infos }
+  },
+
+  async getActiveApp(): Promise<IrisResponse<string>> {
+    try {
+      const app = execSync(
+        'osascript -e \'tell application "System Events" to get name of first process whose frontmost is true\''
+      ).toString().trim()
+      return { success: true, data: app }
+    } catch (err) {
+      return { success: false, error: 'Failed to get active app' }
+    }
   },
 }

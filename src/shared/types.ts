@@ -71,6 +71,9 @@ export enum IrisChannel {
   SYSTEM_GET_RAM         = 'iris:system:getRamUsage',
   SYSTEM_GET_PROCESSES   = 'iris:system:getProcesses',
   SYSTEM_GET_INSTALLED   = 'iris:system:getInstalledApps',
+  SYSTEM_GET_BATTERY     = 'iris:system:getBatteryInfo',
+  SYSTEM_GET_THERMAL     = 'iris:system:getThermalState',
+  SCREEN_GET_ACTIVE_APP  = 'iris:screen:getActiveApp',
 
   // Store
   STORE_GET       = 'iris:store:get',
@@ -83,6 +86,14 @@ export enum IrisChannel {
   AI_EMBED          = 'iris:ai:embed',
   AI_VECTOR_SEARCH  = 'iris:ai:vectorSearch',
   AI_INDEX_DIR      = 'iris:ai:indexDirectory',
+
+  // macOS specific
+  MACOS_RUN_APPLESCRIPT  = 'iris:macos:runAppleScript',
+  MACOS_OPEN_WITH_APP    = 'iris:macos:openWithApp',
+  MACOS_SHOW_NOTIF       = 'iris:macos:showNotification',
+  MACOS_SET_DOCK_BADGE   = 'iris:macos:setDockBadge',
+  MACOS_REQUEST_PERM     = 'iris:macos:requestPermission',
+  FILES_TRASH            = 'iris:files:trash',
 }
 
 // ─── Gemini Tool Call ─────────────────────────────────────────────────────────
