@@ -1,12 +1,13 @@
-import { exec, spawn } from 'child_process'
+import { exec } from 'child_process'
 import { promisify } from 'util'
 import path from 'path'
+import { existsSync } from 'fs'
 import type { IrisResponse, InstalledApp, RunningApp } from '../../../shared/types'
 
 const execAsync = promisify(exec)
 
-// macOS only — scan /Applications and ~/Applications
 async function scanAppsDir(dir: string): Promise<InstalledApp[]> {
+  if (!existsSync(dir)) return []
   const { stdout } = await execAsync(
     `find "${dir}" -maxdepth 2 -name "*.app" -not -path "*/Contents/*" 2>/dev/null || true`
   )
@@ -26,7 +27,7 @@ async function scanAppsDir(dir: string): Promise<InstalledApp[]> {
       )
       version = ver.trim() || undefined
     } catch {
-      // plist unreadable — skip metadata
+      // plist unreadable
     }
     apps.push({ name, path: line, bundleId, version })
   }
@@ -47,12 +48,7 @@ export const appsHandlers = {
   },
 
   async launch(_: unknown, appNameOrPath: string, args: string[] = []): Promise<IrisResponse<{ pid: number }>> {
-    let cmd: string
-    if (appNameOrPath.endsWith('.app') || appNameOrPath.startsWith('/')) {
-      cmd = `open -a "${appNameOrPath}"`
-    } else {
-      cmd = `open -a "${appNameOrPath}"`
-    }
+    let cmd = `open -a "${appNameOrPath}"`
     if (args.length) cmd += ` --args ${args.map((a) => `"${a}"`).join(' ')}`
 
     const { stdout } = await execAsync(cmd)
@@ -68,17 +64,46 @@ export const appsHandlers = {
 
   async getRunning(): Promise<IrisResponse<RunningApp[]>> {
     const { stdout } = await execAsync(
-      `ps -Ao pid,comm,%mem,rss -no-headers 2>/dev/null || ps -Ao pid,comm,%mem,rss`
+      `ps -eo pid,comm,rss --no-headers 2>/dev/null || ps -eo pid,comm,rss`
     )
     const apps: RunningApp[] = []
     for (const line of stdout.split('\n').filter(Boolean)) {
       const parts = line.trim().split(/\s+/)
-      if (parts.length < 4) continue
+      if (parts.length < 3) continue
       const pid = parseInt(parts[0]!, 10)
-      const name = parts[1] ?? 'unknown'
-      const memoryMB = parseFloat(parts[3]!) / 1024
+      const name = path.basename(parts[1] ?? 'unknown')
+      const memoryMB = Math.round((parseInt(parts[2]!, 10) / 1024) * 10) / 10
       apps.push({ pid, name, memoryMB })
     }
     return { success: true, data: apps }
+  },
+
+  async getFromApplicationsFolder(
+    _: unknown,
+    appName: string
+  ): Promise<IrisResponse<InstalledApp | null>> {
+    const candidates = [
+      `/Applications/${appName}.app`,
+      `${process.env['HOME']}/Applications/${appName}.app`,
+    ]
+    for (const appPath of candidates) {
+      if (existsSync(appPath)) {
+        const plistPath = path.join(appPath, 'Contents/Info.plist')
+        let bundleId: string | undefined
+        let version: string | undefined
+        try {
+          const { stdout: bid } = await execAsync(
+            `defaults read "${plistPath}" CFBundleIdentifier 2>/dev/null || true`
+          )
+          bundleId = bid.trim() || undefined
+          const { stdout: ver } = await execAsync(
+            `defaults read "${plistPath}" CFBundleShortVersionString 2>/dev/null || true`
+          )
+          version = ver.trim() || undefined
+        } catch { /* skip */ }
+        return { success: true, data: { name: appName, path: appPath, bundleId, version } }
+      }
+    }
+    return { success: true, data: null }
   },
 }

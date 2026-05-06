@@ -1,3 +1,4 @@
+import { screen } from 'electron'
 import type { IrisResponse, WindowInfo, SnapPosition } from '../../../shared/types'
 
 async function getManager() {
@@ -23,6 +24,10 @@ function snapBounds(pos: SnapPosition, screenW: number, screenH: number) {
   return map[pos]
 }
 
+function findWindow(wm: Awaited<ReturnType<typeof getManager>>, windowId: number) {
+  return wm.getWindows().find((w) => w.id === windowId)
+}
+
 export const windowHandlers = {
   async list(): Promise<IrisResponse<WindowInfo[]>> {
     const wm = await getManager()
@@ -39,15 +44,11 @@ export const windowHandlers = {
 
   async snap(_: unknown, windowId: number, position: SnapPosition): Promise<IrisResponse<void>> {
     const wm = await getManager()
-    const windows = wm.getWindows()
-    const win = windows.find((w) => w.id === windowId)
+    const win = findWindow(wm, windowId)
     if (!win) return { success: false, error: `Window ${windowId} not found` }
 
-    // Use primary display size — 2560x1600 is typical M-series; fall back gracefully
-    const screen = require('electron').screen
     const primary = screen.getPrimaryDisplay()
     const { width, height } = primary.workAreaSize
-
     const bounds = snapBounds(position, width, height)
     win.setBounds(bounds)
     return { success: true }
@@ -55,7 +56,7 @@ export const windowHandlers = {
 
   async minimize(_: unknown, windowId: number): Promise<IrisResponse<void>> {
     const wm = await getManager()
-    const win = wm.getWindows().find((w) => w.id === windowId)
+    const win = findWindow(wm, windowId)
     if (!win) return { success: false, error: `Window ${windowId} not found` }
     win.minimize()
     return { success: true }
@@ -63,7 +64,7 @@ export const windowHandlers = {
 
   async maximize(_: unknown, windowId: number): Promise<IrisResponse<void>> {
     const wm = await getManager()
-    const win = wm.getWindows().find((w) => w.id === windowId)
+    const win = findWindow(wm, windowId)
     if (!win) return { success: false, error: `Window ${windowId} not found` }
     win.maximize?.()
     return { success: true }
@@ -71,9 +72,20 @@ export const windowHandlers = {
 
   async focus(_: unknown, windowId: number): Promise<IrisResponse<void>> {
     const wm = await getManager()
-    const win = wm.getWindows().find((w) => w.id === windowId)
+    const win = findWindow(wm, windowId)
     if (!win) return { success: false, error: `Window ${windowId} not found` }
     win.bringToTop()
+    return { success: true }
+  },
+
+  async fullscreen(_: unknown, windowId: number): Promise<IrisResponse<void>> {
+    const wm = await getManager()
+    const win = findWindow(wm, windowId)
+    if (!win) return { success: false, error: `Window ${windowId} not found` }
+
+    const primary = screen.getPrimaryDisplay()
+    const { width, height } = primary.size
+    win.setBounds({ x: 0, y: 0, width, height })
     return { success: true }
   },
 }

@@ -1,7 +1,10 @@
 import fs from 'fs/promises'
 import path from 'path'
 import { existsSync } from 'fs'
+import { shell } from 'electron'
 import type { IrisResponse, FileEntry } from '../../../shared/types'
+
+const HIDDEN_FILTER = /^(\._|\.DS_Store$)/
 
 async function stat(filePath: string): Promise<FileEntry> {
   const s = await fs.stat(filePath)
@@ -46,8 +49,9 @@ export const filesHandlers = {
 
   async list(_: unknown, dir: string): Promise<IrisResponse<FileEntry[]>> {
     const entries = await fs.readdir(dir)
+    const filtered = entries.filter((name) => !HIDDEN_FILTER.test(name))
     const results = await Promise.all(
-      entries.map((name) => stat(path.join(dir, name)))
+      filtered.map((name) => stat(path.join(dir, name)))
     )
     return { success: true, data: results }
   },
@@ -65,6 +69,7 @@ export const filesHandlers = {
       if (!existsSync(current)) return
       const entries = await fs.readdir(current, { withFileTypes: true })
       for (const entry of entries) {
+        if (HIDDEN_FILTER.test(entry.name)) continue
         const full = path.join(current, entry.name)
         if (entry.isDirectory() && recursive) {
           await walk(full)
@@ -80,5 +85,10 @@ export const filesHandlers = {
 
     await walk(dir)
     return { success: true, data: results }
+  },
+
+  async trash(_: unknown, filePath: string): Promise<IrisResponse<void>> {
+    await shell.trashItem(filePath)
+    return { success: true }
   },
 }
