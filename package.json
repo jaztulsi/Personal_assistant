@@ -2,6 +2,7 @@
   "name": "iris-os",
   "version": "0.1.0",
   "description": "IRIS — Intelligent Runtime Interface System // JASRAJ",
+  "type": "module",
   "main": "dist/main/index.js",
   "author": "Jasraj",
   "private": true,

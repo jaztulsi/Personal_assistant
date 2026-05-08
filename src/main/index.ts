@@ -1,8 +1,12 @@
 import { app, BrowserWindow, dialog, systemPreferences, shell } from 'electron'
-import { join } from 'path'
+import { join, dirname } from 'path'
+import { fileURLToPath } from 'url'
 import { registerAllHandlers } from './ipc/index'
 
 // IRIS // JASRAJ
+
+// Node ESM has no __dirname. Derive it from import.meta.url.
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged
 
