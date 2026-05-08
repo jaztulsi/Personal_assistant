@@ -124,9 +124,10 @@ export const authHandlers = {
   },
 
   async isSetup(): Promise<IrisResponse<boolean>> {
-    const [descriptors, pinHash] = await Promise.all([readDescriptors(), readPinHash()])
-    const touchAvailable = process.platform === 'darwin' && systemPreferences.canPromptTouchID()
-    return { success: true, data: descriptors.length > 0 || pinHash !== null || touchAvailable }
+    // PIN is the mandatory fallback. Touch ID alone doesn't count as "setup"
+    // because it can be cancelled, leaving the user with no way back in.
+    const pinHash = await readPinHash()
+    return { success: true, data: pinHash !== null }
   },
 
   async getAvailableMethods(): Promise<IrisResponse<AuthMethods>> {

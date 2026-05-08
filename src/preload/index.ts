@@ -128,13 +128,17 @@ const irisAPI = {
 
   system: {
     getCpuUsage: () =>
-      invoke<{ percent: number; model: string; cores: number }>(IrisChannel.SYSTEM_GET_CPU),
+      invoke<{ percent: number; model: string; cores: number; eCores?: number; pCores?: number; eLoad?: number; pLoad?: number }>(IrisChannel.SYSTEM_GET_CPU),
     getRamUsage: () =>
       invoke<{ usedGB: number; totalGB: number; percent: number }>(IrisChannel.SYSTEM_GET_RAM),
     getProcesses: () =>
       invoke<ProcessInfo[]>(IrisChannel.SYSTEM_GET_PROCESSES),
     getInstalledApps: () =>
       invoke<InstalledApp[]>(IrisChannel.SYSTEM_GET_INSTALLED),
+    getBatteryInfo: () =>
+      invoke<{ level: number; isPlugged: boolean; health?: string }>(IrisChannel.SYSTEM_GET_BATTERY),
+    getThermalState: () =>
+      invoke<{ throttling: boolean; temperature?: number }>(IrisChannel.SYSTEM_GET_THERMAL),
   },
 
   store: {
