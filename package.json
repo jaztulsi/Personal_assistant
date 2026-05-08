@@ -27,6 +27,7 @@
     "cheerio": "^1.0.0",
     "chokidar": "^4.0.3",
     "electron-store": "^10.0.0",
+    "face-api.js": "^0.22.2",
     "framer-motion": "^11.15.0",
     "googleapis": "^144.0.0",
     "groq-sdk": "^0.7.0",

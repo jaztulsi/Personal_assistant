@@ -16,6 +16,8 @@ import type {
   EmbeddingResult,
   VectorSearchResult,
   SnapPosition,
+  AuthMethods,
+  FaceVerifyResult,
 } from '../shared/types'
 
 // IRIS IPC Bridge // JASRAJ
@@ -155,6 +157,38 @@ const irisAPI = {
       invoke<VectorSearchResult[]>(IrisChannel.AI_VECTOR_SEARCH, query, options),
     indexDirectory: (dir: string, options?: { recursive?: boolean; extensions?: string[] }) =>
       invoke<{ indexed: number }>(IrisChannel.AI_INDEX_DIR, dir, options),
+  },
+
+  auth: {
+    touchID: () =>
+      invoke<boolean>(IrisChannel.AUTH_TOUCH_ID),
+    enrollFace: (descriptor: number[]) =>
+      invoke<{ count: number }>(IrisChannel.AUTH_ENROLL_FACE, descriptor),
+    verifyFace: (descriptor: number[]) =>
+      invoke<FaceVerifyResult>(IrisChannel.AUTH_VERIFY_FACE, descriptor),
+    clearFace: () =>
+      invoke<void>(IrisChannel.AUTH_CLEAR_FACE),
+    setPin: (pin: string) =>
+      invoke<void>(IrisChannel.AUTH_SET_PIN, pin),
+    verifyPin: (pin: string) =>
+      invoke<boolean>(IrisChannel.AUTH_VERIFY_PIN, pin),
+    isSetup: () =>
+      invoke<boolean>(IrisChannel.AUTH_IS_SETUP),
+    getAvailableMethods: () =>
+      invoke<AuthMethods>(IrisChannel.AUTH_GET_METHODS),
+  },
+
+  macos: {
+    runAppleScript: (script: string) =>
+      invoke<string>(IrisChannel.MACOS_RUN_APPLESCRIPT, script),
+    openWithApp: (filePath: string, appName: string) =>
+      invoke<void>(IrisChannel.MACOS_OPEN_WITH_APP, filePath, appName),
+    showNotification: (title: string, body: string) =>
+      invoke<void>(IrisChannel.MACOS_SHOW_NOTIF, title, body),
+    setDockBadge: (count: number) =>
+      invoke<void>(IrisChannel.MACOS_SET_DOCK_BADGE, count),
+    requestPermission: (type: 'camera' | 'microphone' | 'screen' | 'accessibility') =>
+      invoke<boolean>(IrisChannel.MACOS_REQUEST_PERM, type),
   },
 } as const
 

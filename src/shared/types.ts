@@ -94,6 +94,16 @@ export enum IrisChannel {
   MACOS_SET_DOCK_BADGE   = 'iris:macos:setDockBadge',
   MACOS_REQUEST_PERM     = 'iris:macos:requestPermission',
   FILES_TRASH            = 'iris:files:trash',
+
+  // Auth (lock screen)
+  AUTH_TOUCH_ID          = 'iris:auth:touchID',
+  AUTH_ENROLL_FACE       = 'iris:auth:enrollFace',
+  AUTH_VERIFY_FACE       = 'iris:auth:verifyFace',
+  AUTH_CLEAR_FACE        = 'iris:auth:clearFace',
+  AUTH_SET_PIN           = 'iris:auth:setPin',
+  AUTH_VERIFY_PIN        = 'iris:auth:verifyPin',
+  AUTH_IS_SETUP          = 'iris:auth:isSetup',
+  AUTH_GET_METHODS       = 'iris:auth:getAvailableMethods',
 }
 
 // ─── Gemini Tool Call ─────────────────────────────────────────────────────────
@@ -236,6 +246,19 @@ export interface VectorSearchResult {
   text: string
   score: number
   metadata?: Record<string, unknown>
+}
+
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+
+export interface AuthMethods {
+  touchId: boolean
+  face: boolean
+  pin: boolean
+}
+
+export interface FaceVerifyResult {
+  matched: boolean
+  confidence: number
 }
 
 // ─── Window Snap Positions ────────────────────────────────────────────────────
