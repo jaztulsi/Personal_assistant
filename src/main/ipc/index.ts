@@ -17,7 +17,11 @@ import type { IrisResponse } from '../../shared/types'
 
 // IRIS IPC Router // JASRAJ
 
-type HandlerFn = (...args: unknown[]) => Promise<IrisResponse>
+// Each handler has its own precisely-typed signature (e.g. (_, path: string)).
+// The registry just needs a common callable shape — `any[]` params keep the
+// concrete signatures assignable here without widening them at the call site.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type HandlerFn = (...args: any[]) => Promise<IrisResponse>
 
 const wrap = (fn: HandlerFn): HandlerFn =>
   async (...args) => {
@@ -128,6 +132,6 @@ const allHandlers: Record<IrisChannel, HandlerFn> = {
 
 export function registerAllHandlers(): void {
   for (const [channel, handler] of Object.entries(allHandlers)) {
-    ipcMain.handle(channel, (_event, ...args) => wrap(handler as HandlerFn)(...args))
+    ipcMain.handle(channel, (event, ...args) => wrap(handler as HandlerFn)(event, ...args))
   }
 }

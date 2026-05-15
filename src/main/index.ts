@@ -26,9 +26,9 @@ async function requestMacOSPermissions(): Promise<void> {
   }
 
   // Accessibility — must open System Settings manually
-  const { default: nut } = await import('@nut-tree/nut-js').catch(() => ({ default: null }))
+  const nut = await import('@nut-tree-fork/nut-js').catch(() => null)
   if (nut) {
-    const hasAccess = await (nut as any).getActiveWindow().then(() => true).catch(() => false)
+    const hasAccess = await nut.getActiveWindow().then(() => true).catch(() => false)
     if (!hasAccess) {
       dialog.showMessageBox({
         type: 'info',
@@ -84,6 +84,9 @@ function createWindow(): void {
   })
 
   if (isDev) {
+  mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+    callback({ responseHeaders: { ...details.responseHeaders, "Content-Security-Policy": ["default-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src 'self' http://localhost:11434 ws://localhost:11434 http://localhost:5173 ws://localhost:5173"] } })
+  })
     mainWindow.loadURL('http://localhost:5173')
     mainWindow.webContents.openDevTools()
   } else {

@@ -220,7 +220,11 @@ export function SetupScreen({ onComplete }: Props) {
 
       {/* Content */}
       <div className="mt-14 w-full max-w-md flex flex-col items-center min-h-[320px]">
-        <AnimatePresence mode="wait">
+        {/* No `mode="wait"`: under React 19, framer-motion 12 intermittently
+            never fires the exit-complete callback for the leaving child, which
+            traps the screen on the previous step. Letting them cross-fade is a
+            small visual loss for full reliability. */}
+        <AnimatePresence>
           {step === 'intro' && (
             <motion.div
               key="intro"

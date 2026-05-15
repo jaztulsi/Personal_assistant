@@ -28,7 +28,7 @@ async function scanAppsDir(dir: string): Promise<InstalledApp[]> {
     } catch {
       // plist unreadable — skip metadata
     }
-    apps.push({ name, path: line, bundleId, version })
+    apps.push({ name, path: line, ...(bundleId && { bundleId }), ...(version && { version }) })
   }
   return apps
 }

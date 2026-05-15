@@ -14,7 +14,8 @@ export const storeHandlers = {
   async get<T = unknown>(_: unknown, key: string): Promise<IrisResponse<T>> {
     const store = await getStore()
     const value = store.get(key) as T | undefined
-    return { success: true, data: value }
+    // exactOptionalPropertyTypes: omit `data` entirely rather than set undefined.
+    return value === undefined ? { success: true } : { success: true, data: value }
   },
 
   async set(_: unknown, key: string, value: unknown): Promise<IrisResponse<void>> {
@@ -33,7 +34,7 @@ export const storeHandlers = {
     const { safeStorage } = await import('electron')
     const store = await getStore()
     const raw = store.get(`vault:${key}`) as string | undefined
-    if (!raw) return { success: true, data: undefined }
+    if (!raw) return { success: true }
 
     if (!safeStorage.isEncryptionAvailable()) {
       return { success: true, data: raw as unknown as T }

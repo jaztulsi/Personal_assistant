@@ -77,7 +77,7 @@ export const webHandlers = {
       title: r.title,
       url: r.url,
       snippet: r.content,
-      publishedDate: r.published_date,
+      ...(r.published_date && { publishedDate: r.published_date }),
     }))
     return { success: true, data: results }
   },

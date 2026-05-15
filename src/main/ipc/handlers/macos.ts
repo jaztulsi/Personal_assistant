@@ -1,5 +1,5 @@
 import { execSync } from 'child_process'
-import { shell, Notification, app } from 'electron'
+import { shell, Notification, app, systemPreferences } from 'electron'
 import type { IrisResponse } from '../../../shared/types'
 
 // Sanitize AppleScript input to prevent injection
@@ -72,16 +72,16 @@ export const macosHandlers = {
     type: 'camera' | 'microphone' | 'screen'
   ): Promise<IrisResponse<boolean>> {
     try {
-      const permission = await app.requestSingleInstanceLock()
-      const status = app.getAccessibilityPermissionStatus?.() ?? 'unknown'
-
       if (type === 'screen') {
-        const result = await app.dock?.show?.()
+        // Screen Recording can't be queried directly — surface the Dock and
+        // report optimistically; the system prompts on first real capture.
+        app.dock?.show?.()
         return { success: true, data: true }
       }
 
-      // For camera/microphone, Electron auto-prompts on first use
-      return { success: true, data: status === 'granted' }
+      // camera | microphone — Electron auto-prompts on first use; report the
+      // current grant state.
+      return { success: true, data: systemPreferences.getMediaAccessStatus(type) === 'granted' }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
       return { success: false, error: message }

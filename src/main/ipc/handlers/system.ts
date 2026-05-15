@@ -27,7 +27,7 @@ export const systemHandlers = {
         percent: Math.round(load.currentLoad * 10) / 10,
         model: `${cpu.manufacturer} ${cpu.brand}`,
         cores: cpu.physicalCores,
-        ...(isMSeries && ecores !== undefined && { ecores, pcores }),
+        ...(isMSeries && ecores !== undefined && pcores !== undefined && { ecores, pcores }),
       },
     }
   },
@@ -57,7 +57,7 @@ export const systemHandlers = {
         pid: p.pid,
         name: p.name,
         cpuPercent: Math.round(p.cpu * 10) / 10,
-        memoryMB: Math.round(p.mem_rss / 1024),
+        memoryMB: Math.round(p.memRss / 1024),
         status: p.state,
       }))
     return { success: true, data: procs }
@@ -84,14 +84,15 @@ export const systemHandlers = {
     try {
       const si = await import('systeminformation')
       const battery = await si.battery()
-      return {
-        success: true,
-        data: {
-          level: Math.round(battery.percent),
-          isPlugged: battery.acConnected,
-          health: battery.health,
-        },
+      const data: { level: number; isPlugged: boolean; health?: string } = {
+        level: Math.round(battery.percent),
+        isPlugged: battery.acConnected,
       }
+      // systeminformation v5 has no `health` field — derive it from capacity wear.
+      if (battery.designedCapacity && battery.maxCapacity) {
+        data.health = `${Math.round((battery.maxCapacity / battery.designedCapacity) * 100)}%`
+      }
+      return { success: true, data }
     } catch {
       return { success: false, error: 'Battery info unavailable' }
     }

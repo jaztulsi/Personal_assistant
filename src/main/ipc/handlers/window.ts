@@ -27,13 +27,18 @@ export const windowHandlers = {
   async list(): Promise<IrisResponse<WindowInfo[]>> {
     const wm = await getManager()
     const windows = wm.getWindows()
-    const infos: WindowInfo[] = windows.map((w) => ({
-      id: w.id,
-      title: w.getTitle(),
-      appName: w.path ?? '',
-      bounds: w.getBounds(),
-      isMinimized: w.isMinimized?.() ?? false,
-    }))
+    const infos: WindowInfo[] = windows.map((w) => {
+      // node-window-manager's IRectangle has all-optional fields — normalise.
+      const b = w.getBounds()
+      return {
+        id: w.id,
+        title: w.getTitle(),
+        appName: w.path ?? '',
+        bounds: { x: b.x ?? 0, y: b.y ?? 0, width: b.width ?? 0, height: b.height ?? 0 },
+        // No minimized flag exists — a non-visible window is the closest proxy.
+        isMinimized: !w.isVisible(),
+      }
+    })
     return { success: true, data: infos }
   },
 

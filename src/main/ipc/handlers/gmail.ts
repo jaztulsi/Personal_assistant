@@ -85,7 +85,8 @@ export const gmailHandlers = {
       const { google } = await import('googleapis')
       const gmail = google.gmail({ version: 'v1', auth })
       const profile = await gmail.users.getProfile({ userId: 'me' })
-      return { success: true, data: { authenticated: true, email: profile.data.emailAddress ?? undefined } }
+      const email = profile.data.emailAddress
+      return { success: true, data: { authenticated: true, ...(email ? { email } : {}) } }
     } catch {
       return { success: true, data: { authenticated: false } }
     }
@@ -102,12 +103,15 @@ export const gmailHandlers = {
     const gmail = google.gmail({ version: 'v1', auth })
     const { maxResults = 20, query, labelId } = options
 
-    const listRes = await gmail.users.messages.list({
+    // exactOptionalPropertyTypes: only attach q / labelIds when actually set.
+    const listParams: { userId: string; maxResults: number; q?: string; labelIds?: string[] } = {
       userId: 'me',
       maxResults,
-      q: query,
-      labelIds: labelId ? [labelId] : undefined,
-    })
+    }
+    if (query) listParams.q = query
+    if (labelId) listParams.labelIds = [labelId]
+
+    const listRes = await gmail.users.messages.list(listParams)
 
     const messages: GmailMessage[] = []
     for (const ref of listRes.data.messages ?? []) {

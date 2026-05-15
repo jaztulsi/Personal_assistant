@@ -34,7 +34,7 @@ export const adbHandlers = {
       if (!rawDevices.length) {
         return { success: true, data: MOCK_DEVICES, mocked: true }
       }
-      const devices: AdbDevice[] = rawDevices.map((d) => ({
+      const devices: AdbDevice[] = rawDevices.map((d: { id: string; type: string }) => ({
         id: d.id,
         type: d.type as AdbDevice['type'],
       }))
@@ -47,7 +47,7 @@ export const adbHandlers = {
   async tap(_: unknown, deviceId: string, x: number, y: number): Promise<IrisResponse<void>> {
     try {
       const client = await getClient()
-      await client.shell(deviceId, `input tap ${x} ${y}`)
+      await client.getDevice(deviceId).shell(`input tap ${x} ${y}`)
       return { success: true }
     } catch (err) {
       return { success: false, reconnect: true, error: String(err) } as IrisResponse<void>
@@ -65,7 +65,7 @@ export const adbHandlers = {
   ): Promise<IrisResponse<void>> {
     try {
       const client = await getClient()
-      await client.shell(deviceId, `input swipe ${x1} ${y1} ${x2} ${y2} ${duration}`)
+      await client.getDevice(deviceId).shell(`input swipe ${x1} ${y1} ${x2} ${y2} ${duration}`)
       return { success: true }
     } catch (err) {
       return { success: false, reconnect: true, error: String(err) } as IrisResponse<void>
@@ -80,7 +80,7 @@ export const adbHandlers = {
   ): Promise<IrisResponse<void>> {
     try {
       const client = await getClient()
-      const transfer = await client.push(deviceId, localPath, remotePath)
+      const transfer = await client.getDevice(deviceId).push(localPath, remotePath)
       await new Promise<void>((resolve, reject) => {
         transfer.on('end', resolve)
         transfer.on('error', reject)
@@ -99,7 +99,7 @@ export const adbHandlers = {
   ): Promise<IrisResponse<void>> {
     try {
       const client = await getClient()
-      const transfer = await client.pull(deviceId, remotePath)
+      const transfer = await client.getDevice(deviceId).pull(remotePath)
       const { createWriteStream } = await import('fs')
       await new Promise<void>((resolve, reject) => {
         const ws = createWriteStream(localPath)
@@ -117,7 +117,7 @@ export const adbHandlers = {
   async shell(_: unknown, deviceId: string, command: string): Promise<IrisResponse<string>> {
     try {
       const client = await getClient()
-      const output = await client.shell(deviceId, command)
+      const output = await client.getDevice(deviceId).shell(command)
       const { default: adb } = await import('@devicefarmer/adbkit')
       const text = await adb.util.readAll(output)
       return { success: true, data: text.toString().trim() }
