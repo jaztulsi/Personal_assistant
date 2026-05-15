@@ -8,6 +8,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 
 import { orchestrator } from '../core/IRISOrchestrator'
+import { useIrisStore } from '../store/useIrisStore'
 
 interface Turn {
   id: string
@@ -25,12 +26,12 @@ function makeId(): string {
 export function ChatSidebar() {
   const [turns, setTurns] = useState<Turn[]>([])
   const [draft, setDraft] = useState('')
-  const [online, setOnline] = useState<boolean>(orchestrator.ollamaOnline)
+  const online = useIrisStore((s) => s.ollamaOnline)
   const [sending, setSending] = useState(false)
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const streamingIdRef = useRef<string | null>(null)
 
-  // ── Subscribe to orchestrator events ──────────────────────────────────────
+  // ── Subscribe to orchestrator stream events ───────────────────────────────
   useEffect(() => {
     const offChunk = orchestrator.on('stream:chunk', (payload) => {
       const p = payload as { full: string }
@@ -52,10 +53,7 @@ export function ChatSidebar() {
       setSending(false)
     })
 
-    const offOnline  = orchestrator.on('ollama:online',  () => setOnline(true))
-    const offOffline = orchestrator.on('ollama:offline', () => setOnline(false))
-
-    return () => { offChunk(); offComplete(); offOnline(); offOffline() }
+    return () => { offChunk(); offComplete() }
   }, [])
 
   // Auto-scroll to bottom on new content

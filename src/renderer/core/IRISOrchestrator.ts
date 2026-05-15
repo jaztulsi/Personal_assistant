@@ -10,6 +10,8 @@
 // No external API calls. No keys. Network-isolated by design.
 
 import type { ToolCall, ToolResult } from '@shared/types'
+import { irisStore } from '../store/useIrisStore'
+import { pushChatTurn, pushSetting } from '../sync/supabase'
 
 // ─── Ollama models (single endpoint, swapped via param) ──────────────────────
 
@@ -50,7 +52,7 @@ const OFFLINE_REPLY =
 // ─── window.iris bridge augmentation (preload exposes these at runtime) ──────
 
 interface AIBridge {
-  checkOllama: () => Promise<{ success: boolean; data?: boolean; error?: string }>
+  checkOllama: () => Promise<{ success: boolean; data?: { online: boolean; models: string[] }; error?: string }>
   chatStream: (
     messages: OllamaMessage[],
     model: string,
@@ -128,8 +130,12 @@ class Emitter {
 // ─── Orchestrator ────────────────────────────────────────────────────────────
 
 export class IRISOrchestrator extends Emitter {
-  // State
-  ollamaOnline = false
+  // State — `ollamaOnline` is a getter/setter that proxies to the Zustand store
+  // so every UI surface reads from the same source. Events stay for non-React
+  // consumers (e.g. memory stream toast on transition).
+  get ollamaOnline(): boolean { return irisStore.ollamaOnline }
+  set ollamaOnline(v: boolean) { irisStore.setOllama(v) }
+
   activeModel: string = OLLAMA_MODELS.chat
   activeKind: ModelKind = 'chat'
   isListening = false
@@ -197,9 +203,10 @@ export class IRISOrchestrator extends Emitter {
   private async pingOllama(): Promise<void> {
     try {
       const r = await w().iris.ai.checkOllama()
-      this.ollamaOnline = r.success && r.data === true
+      const online = !!(r.success && r.data?.online === true)
+      irisStore.setOllama(online, r.data?.models)
     } catch {
-      this.ollamaOnline = false
+      irisStore.setOllama(false)
     }
   }
 
@@ -477,7 +484,10 @@ export class IRISOrchestrator extends Emitter {
     }
   }
 
-  setTTS(enabled: boolean): void { this.ttsEnabled = enabled }
+  setTTS(enabled: boolean): void {
+    this.ttsEnabled = enabled
+    void pushSetting('ttsEnabled', enabled)
+  }
 
   // ── Model switching ────────────────────────────────────────────────────────
 
@@ -491,6 +501,8 @@ export class IRISOrchestrator extends Emitter {
     }
     if (kind === 'vision') this.emit('vision:on')
     this.emit('model:changed', { kind, model: this.activeModel })
+    // Best-effort settings sync.
+    void pushSetting('activeModel', { kind, model: this.activeModel })
   }
 
   // ── History management ────────────────────────────────────────────────────
@@ -502,6 +514,10 @@ export class IRISOrchestrator extends Emitter {
       const sys = this.messageHistory[0]!
       const tail = this.messageHistory.slice(-(HISTORY_CAP - 1))
       this.messageHistory = [sys, ...tail]
+    }
+    // Best-effort cloud mirror. System messages are static and don't sync.
+    if (msg.role === 'user' || msg.role === 'assistant') {
+      void pushChatTurn(msg.role, msg.content)
     }
   }
 

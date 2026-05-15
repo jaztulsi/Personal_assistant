@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 import { OLLAMA_MODELS, orchestrator, type ModelKind } from '../core/IRISOrchestrator'
+import { useIrisStore, irisStore } from '../store/useIrisStore'
 
 const POLL_MS = 5000
 
@@ -17,50 +18,56 @@ const MODEL_LABELS: Record<ModelKind, { name: string; tag: string }> = {
 }
 
 interface BridgeShape {
-  iris?: { ai?: { checkOllama?: () => Promise<{ success: boolean; data?: boolean }> } }
+  iris?: {
+    ai?: {
+      checkOllama?: () => Promise<{
+        success: boolean
+        data?: { online: boolean; models: string[] }
+      }>
+    }
+  }
 }
 
-async function pingOllama(): Promise<boolean> {
+/** Returns [online, models]. */
+async function pingOllama(): Promise<[boolean, string[]]> {
   try {
     const ai = (window as unknown as BridgeShape).iris?.ai
-    if (!ai?.checkOllama) return false
+    if (!ai?.checkOllama) return [false, []]
     const r = await ai.checkOllama()
-    return !!(r.success && r.data === true)
+    const ok = !!(r.success && r.data?.online === true)
+    return [ok, r.data?.models ?? []]
   } catch {
-    return false
+    return [false, []]
   }
 }
 
 export function OllamaStatus() {
-  const [online, setOnline] = useState<boolean>(orchestrator.ollamaOnline)
+  // Read straight from the Zustand store — every other "offline" indicator
+  // does the same, so they can never disagree.
+  const online = useIrisStore((s) => s.ollamaOnline)
   const [kind, setKind] = useState<ModelKind>(orchestrator.activeKind)
   const [open, setOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement | null>(null)
 
-  // Poll loop
+  // Poll loop — writes directly to the store; no local mirror.
   useEffect(() => {
     let cancelled = false
     const tick = async () => {
-      const ok = await pingOllama()
-      if (!cancelled) {
-        setOnline(ok)
-        orchestrator.ollamaOnline = ok
-      }
+      const [ok, models] = await pingOllama()
+      if (!cancelled) irisStore.setOllama(ok, models)
     }
     void tick()
     const id = setInterval(tick, POLL_MS)
     return () => { cancelled = true; clearInterval(id) }
   }, [])
 
-  // Subscribe to orchestrator events for instant updates
+  // Model dropdown still listens to orchestrator events.
   useEffect(() => {
-    const offOnline  = orchestrator.on('ollama:online',  () => setOnline(true))
-    const offOffline = orchestrator.on('ollama:offline', () => setOnline(false))
-    const offModel   = orchestrator.on('model:changed',  (payload) => {
+    const offModel = orchestrator.on('model:changed', (payload) => {
       const p = payload as { kind: ModelKind }
       setKind(p.kind)
     })
-    return () => { offOnline(); offOffline(); offModel() }
+    return () => { offModel() }
   }, [])
 
   // Click-outside to close dropdown

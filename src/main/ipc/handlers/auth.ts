@@ -6,7 +6,10 @@ import type { IrisResponse, AuthMethods, FaceVerifyResult } from '../../../share
 
 const FACE_DESCRIPTORS_KEY = 'faceDescriptors'
 const PIN_VAULT_KEY = 'iris.pin'
-const FACE_THRESHOLD = 0.55
+// Euclidean distance threshold on the 128-dim face-api.js descriptor.
+// 0.5 is the canonical face-api.js "same person" cutoff — stricter than 0.55
+// (which lets near-matches in) but still robust to lighting / angle changes.
+const FACE_THRESHOLD = 0.5
 
 let _store: InstanceType<typeof import('electron-store').default> | null = null
 
@@ -90,12 +93,21 @@ export const authHandlers = {
       return { success: false, error: 'invalid_descriptor' }
     }
     const list = await readDescriptors()
-    if (list.length === 0) return { success: true, data: { matched: false, confidence: 0 } }
+    // Hard fail-closed when nothing is enrolled. Without this guard the lock
+    // screen could be tricked into showing the face stage and the absence of
+    // any reference vector would otherwise be a logic vacuum.
+    if (list.length === 0) {
+      return { success: true, data: { matched: false, confidence: 0 } }
+    }
 
     let best = Infinity
     for (const stored of list) {
+      if (!Array.isArray(stored) || stored.length !== 128) continue
       const d = euclidean(stored, descriptor)
       if (d < best) best = d
+    }
+    if (!Number.isFinite(best)) {
+      return { success: true, data: { matched: false, confidence: 0 } }
     }
     const matched = best <= FACE_THRESHOLD
     const confidence = Math.max(0, Math.min(1, 1 - best / FACE_THRESHOLD))
@@ -128,6 +140,15 @@ export const authHandlers = {
     // because it can be cancelled, leaving the user with no way back in.
     const pinHash = await readPinHash()
     return { success: true, data: pinHash !== null }
+  },
+
+  /**
+   * Returns the stored bcrypt PIN hash so the renderer can push it to Supabase.
+   * It's already a one-way digest; safe to surface. Returns null if no PIN is set.
+   */
+  async exportPinHash(): Promise<IrisResponse<string | null>> {
+    const hash = await readPinHash()
+    return { success: true, data: hash }
   },
 
   async getAvailableMethods(): Promise<IrisResponse<AuthMethods>> {

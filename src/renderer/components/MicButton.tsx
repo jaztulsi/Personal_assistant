@@ -7,13 +7,20 @@ import { useCallback, useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 import { orchestrator } from '../core/IRISOrchestrator'
+import { useIrisStore } from '../store/useIrisStore'
 
 interface Props {
-  /** Set by Dashboard from orchestrator.ollamaOnline so we can disable while offline. */
+  /**
+   * Force-disable. If omitted, the button derives its disabled state from the
+   * shared Zustand `ollamaOnline` value so it can never disagree with the
+   * top-right OLLAMA status pill or the chat sidebar's offline banner.
+   */
   disabled?: boolean
 }
 
-export function MicButton({ disabled }: Props) {
+export function MicButton({ disabled: forced }: Props) {
+  const ollamaOnline = useIrisStore((s) => s.ollamaOnline)
+  const disabled = forced ?? !ollamaOnline
   const [recording, setRecording] = useState<boolean>(orchestrator.isRecording)
 
   // Subscribe to listen state

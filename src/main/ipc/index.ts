@@ -110,6 +110,7 @@ const allHandlers: Record<IrisChannel, HandlerFn> = {
   [IrisChannel.AI_EMBED]:         aiHandlers.embed,
   [IrisChannel.AI_VECTOR_SEARCH]: aiHandlers.vectorSearch,
   [IrisChannel.AI_INDEX_DIR]:     aiHandlers.indexDirectory,
+  [IrisChannel.AI_CHECK_OLLAMA]:  aiHandlers.checkOllama,
 
   // macOS
   [IrisChannel.MACOS_RUN_APPLESCRIPT]: macosHandlers.runAppleScript,
@@ -128,6 +129,7 @@ const allHandlers: Record<IrisChannel, HandlerFn> = {
   [IrisChannel.AUTH_VERIFY_PIN]:  authHandlers.verifyPin,
   [IrisChannel.AUTH_IS_SETUP]:    authHandlers.isSetup,
   [IrisChannel.AUTH_GET_METHODS]: authHandlers.getAvailableMethods,
+  [IrisChannel.AUTH_EXPORT_PIN_HASH]: authHandlers.exportPinHash,
 }
 
 export function registerAllHandlers(): void {

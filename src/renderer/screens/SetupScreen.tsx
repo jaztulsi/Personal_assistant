@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import gsap from 'gsap'
 
 import { faceAuth } from '../core/FaceAuth'
+import { pushFaceDescriptor, pushPinHash } from '../sync/supabase'
 
 type Step = 'intro' | 'pin' | 'pin-confirm' | 'face-prompt' | 'face-enroll' | 'done'
 
@@ -93,6 +94,12 @@ export function SetupScreen({ onComplete }: Props) {
       setPinError(r.error?.toUpperCase() ?? 'COULD NOT SAVE PIN')
       return
     }
+    // Best-effort cloud mirror. Local store is canonical — push failure never
+    // blocks setup.
+    void (async () => {
+      const exported = await window.iris.auth.exportPinHash()
+      if (exported.success && exported.data) void pushPinHash(exported.data)
+    })()
     setStep('face-prompt')
   }, [pin, confirm])
 
@@ -149,6 +156,8 @@ export function SetupScreen({ onComplete }: Props) {
       captured += 1
       setFaceProgress(captured)
       setFaceMessage(`CAPTURED ${captured} / ${FACE_SAMPLES}`)
+      // Best-effort encrypted push of just-captured descriptor.
+      if (r.descriptor) void pushFaceDescriptor(r.descriptor)
       if (captured >= FACE_SAMPLES) {
         if (enrollIntervalRef.current) {
           clearInterval(enrollIntervalRef.current)

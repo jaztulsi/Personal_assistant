@@ -13,6 +13,7 @@ import { OllamaStatus } from '../components/OllamaStatus'
 import { MicButton } from '../components/MicButton'
 
 import { orchestrator } from '../core/IRISOrchestrator'
+import { useIrisStore } from '../store/useIrisStore'
 
 interface Props {
   onLock?: () => void
@@ -25,7 +26,7 @@ const ACTIVE_GLOW = '0 0 24px rgba(52,211,153,0.2)'
 
 export function Dashboard({ onLock }: Props) {
   const navigate = useNavigate()
-  const [online, setOnline] = useState<boolean>(orchestrator.ollamaOnline)
+  const online = useIrisStore((s) => s.ollamaOnline)
   const [listening, setListening] = useState<boolean>(orchestrator.isListening)
   const [now, setNow] = useState(() => new Date())
   const [freqData, setFreqData] = useState<Uint8Array | null>(null)
@@ -37,14 +38,11 @@ export function Dashboard({ onLock }: Props) {
     return () => { /* keep singleton alive across screens */ }
   }, [])
 
-  // ── Subscribe to orchestrator events ──────────────────────────────────────
+  // ── Listening transitions still come from the orchestrator ─────────────────
   useEffect(() => {
-    const offOn  = orchestrator.on('ollama:online',  () => setOnline(true))
-    const offOff = orchestrator.on('ollama:offline', () => setOnline(false))
-    const offLs  = orchestrator.on('listening:start', () => setListening(true))
-    const offLe  = orchestrator.on('listening:stop',  () => setListening(false))
-    setOnline(orchestrator.ollamaOnline)
-    return () => { offOn(); offOff(); offLs(); offLe() }
+    const offLs = orchestrator.on('listening:start', () => setListening(true))
+    const offLe = orchestrator.on('listening:stop',  () => setListening(false))
+    return () => { offLs(); offLe() }
   }, [])
 
   // ── Drive frequency data into ParticleSphere while listening ──────────────

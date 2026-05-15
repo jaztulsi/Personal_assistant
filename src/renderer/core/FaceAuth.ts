@@ -2,12 +2,12 @@
 //
 // All biometric data is local. Descriptors live in electron-store under
 // 'faceDescriptors' (via main IPC). Nothing leaves the device.
-// Match metric: Euclidean distance, threshold 0.55.
+// Match metric: Euclidean distance, threshold 0.5 (must agree with main-side).
 
 type FaceApi = typeof import('face-api.js')
 
 const MODEL_URL = '/models' // public/models/* (served by Vite during dev, packaged for prod)
-const MATCH_THRESHOLD = 0.55
+const MATCH_THRESHOLD = 0.5
 
 export interface FaceAuthState {
   available: boolean
@@ -82,13 +82,15 @@ class FaceAuthEngine {
   }
 
   /** Sample a single face from the camera feed and enroll it. */
-  async enroll(video: HTMLVideoElement): Promise<{ ok: boolean; count?: number; error?: string }> {
+  async enroll(
+    video: HTMLVideoElement,
+  ): Promise<{ ok: boolean; count?: number; error?: string; descriptor?: number[] }> {
     const desc = await this.computeDescriptor(video)
     if (!desc) return { ok: false, error: 'no_face' }
     const r = await window.iris.auth.enrollFace(desc)
     if (!r.success) return { ok: false, error: r.error ?? 'enroll_failed' }
     this.enrolledCount = r.data?.count ?? this.enrolledCount + 1
-    return { ok: true, count: this.enrolledCount }
+    return { ok: true, count: this.enrolledCount, descriptor: desc }
   }
 
   /** Sample a single face and verify against stored descriptors. */

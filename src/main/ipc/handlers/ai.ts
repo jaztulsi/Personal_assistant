@@ -79,6 +79,17 @@ export const aiHandlers = {
     return { success: true, data: hits }
   },
 
+  async checkOllama(_: unknown): Promise<IrisResponse<{ online: boolean; models: string[] }>> {
+    try {
+      const res = await fetch('http://localhost:11434/api/tags')
+      const data = await res.json()
+      const models = data.models.map((m: { name: string }) => m.name)
+      return { success: true, data: { online: true, models } }
+    } catch {
+      return { success: true, data: { online: false, models: [] } }
+    }
+  },
+
   async indexDirectory(
     _: unknown,
     dir: string,

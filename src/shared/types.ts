@@ -86,6 +86,7 @@ export enum IrisChannel {
   AI_EMBED          = 'iris:ai:embed',
   AI_VECTOR_SEARCH  = 'iris:ai:vectorSearch',
   AI_INDEX_DIR      = 'iris:ai:indexDirectory',
+  AI_CHECK_OLLAMA   = 'iris:ai:checkOllama',
 
   // macOS specific
   MACOS_RUN_APPLESCRIPT  = 'iris:macos:runAppleScript',
@@ -104,6 +105,7 @@ export enum IrisChannel {
   AUTH_VERIFY_PIN        = 'iris:auth:verifyPin',
   AUTH_IS_SETUP          = 'iris:auth:isSetup',
   AUTH_GET_METHODS       = 'iris:auth:getAvailableMethods',
+  AUTH_EXPORT_PIN_HASH   = 'iris:auth:exportPinHash',
 }
 
 // ─── Gemini Tool Call ─────────────────────────────────────────────────────────

@@ -161,6 +161,8 @@ const irisAPI = {
       invoke<VectorSearchResult[]>(IrisChannel.AI_VECTOR_SEARCH, query, options),
     indexDirectory: (dir: string, options?: { recursive?: boolean; extensions?: string[] }) =>
       invoke<{ indexed: number }>(IrisChannel.AI_INDEX_DIR, dir, options),
+    checkOllama: () =>
+      invoke<{ online: boolean; models: string[] }>(IrisChannel.AI_CHECK_OLLAMA),
   },
 
   auth: {
@@ -180,6 +182,8 @@ const irisAPI = {
       invoke<boolean>(IrisChannel.AUTH_IS_SETUP),
     getAvailableMethods: () =>
       invoke<AuthMethods>(IrisChannel.AUTH_GET_METHODS),
+    exportPinHash: () =>
+      invoke<string | null>(IrisChannel.AUTH_EXPORT_PIN_HASH),
   },
 
   macos: {
