@@ -2,7 +2,7 @@ import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import electron from 'vite-plugin-electron'
 import renderer from 'vite-plugin-electron-renderer'
-import { writeFileSync, mkdirSync } from 'fs'
+import { readFileSync, writeFileSync, existsSync, rmSync, renameSync } from 'fs'
 import { resolve } from 'path'
 
 // Vite root is the renderer (src/renderer), so vite-plugin-electron entry paths
@@ -12,22 +12,26 @@ const projectRoot = __dirname
 const fromRoot = (...p: string[]) => resolve(projectRoot, ...p)
 
 /**
- * Project-wide `"type": "module"` makes Node parse .js as ESM. Preload runs
- * as CJS (it must be sync, and Electron preload doesn't support ESM yet), so
- * we drop a tiny `package.json` with `{"type":"commonjs"}` into the preload
- * output dir to scope-override Node's interpretation. Main is ESM and needs
- * no shim.
+ * Project-wide `"type": "module"` makes vite-plugin-electron emit ESM for
+ * every target (it keys off the root package.json `type`). Electron only
+ * loads a preload script as ESM when the file ends in `.mjs` — a `.js`
+ * preload is always parsed as CommonJS and chokes on `import`. So we rename
+ * the emitted preload bundle `index.js` → `index.mjs` after the build and
+ * fix up its sourcemap pointer. Main is ESM too and needs no rename.
  */
-function writeCjsScope(outDir: string): Plugin {
+function renameToMjs(outDir: string): Plugin {
   return {
-    name: `iris:cjs-scope-${outDir}`,
+    name: `iris:rename-mjs-${outDir}`,
     apply: () => true,
     closeBundle() {
-      mkdirSync(outDir, { recursive: true })
-      writeFileSync(
-        resolve(outDir, 'package.json'),
-        JSON.stringify({ type: 'commonjs' }, null, 2) + '\n'
-      )
+      const js = resolve(outDir, 'index.js')
+      if (existsSync(js)) {
+        const code = readFileSync(js, 'utf8').replace('index.js.map', 'index.mjs.map')
+        writeFileSync(resolve(outDir, 'index.mjs'), code)
+        rmSync(js)
+      }
+      const map = resolve(outDir, 'index.js.map')
+      if (existsSync(map)) renameSync(map, resolve(outDir, 'index.mjs.map'))
     },
   }
 }
@@ -42,7 +46,8 @@ export default defineConfig({
         onstart({ startup }) {
           // Launch Electron once main is built (and reload it on subsequent
           // rebuilds). Without this, dev would only serve the renderer.
-          startup()
+          // --remote-debugging-port lets us inspect the renderer console.
+          startup(['.', '--no-sandbox', '--remote-debugging-port=9222'])
         },
         vite: {
           resolve: {
@@ -90,7 +95,7 @@ export default defineConfig({
           reload()
         },
         vite: {
-          plugins: [writeCjsScope(fromRoot('dist/preload'))],
+          plugins: [renameToMjs(fromRoot('dist/preload'))],
           resolve: {
             alias: {
               '@shared':  fromRoot('src/shared'),
@@ -101,9 +106,8 @@ export default defineConfig({
             sourcemap: true,
             outDir: fromRoot('dist/preload'),
             emptyOutDir: true,
-            // Preload defaults to CJS in vite-plugin-electron. The CJS-scope
-            // package.json shim above makes Node treat its .js as CJS even
-            // under root "type": "module".
+            // Emitted as ESM index.js, then renamed to index.mjs by the
+            // renameToMjs plugin so Electron loads it as an ES Module.
             rollupOptions: {
               external: ['electron'],
             },

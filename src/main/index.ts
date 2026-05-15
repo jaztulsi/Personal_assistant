@@ -39,7 +39,7 @@ async function requestMacOSPermissions(): Promise<void> {
         defaultId: 0,
       }).then(({ response }) => {
         if (response === 0) {
-          shell.open('x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility')
+          shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility')
         }
       })
     }
@@ -57,7 +57,7 @@ async function requestMacOSPermissions(): Promise<void> {
       defaultId: 0,
     }).then(({ response }) => {
       if (response === 0) {
-        shell.open('x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture')
+        shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture')
       }
     })
   }
@@ -76,7 +76,7 @@ function createWindow(): void {
     transparent: false,
     backgroundColor: '#00000000',
     webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
+      preload: join(__dirname, '../preload/index.mjs'),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: false,
